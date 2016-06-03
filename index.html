@@ -1,0 +1,194 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<script src="digit.js"></script>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>炫彩倒计时</title>
+<style>
+	canvas{
+		border:1px solid white;
+		box-shadow: 3px 3px 20px;
+	}
+</style>
+</head>
+
+<body style="height:100%">
+	<audio src="2.MP3" autoplay="autoplay">
+	Your browser does not support the audio element.
+	</audio>
+	<canvas id="canvas"    style="height:100%"></canvas>
+	<script>
+		var clientW=document.body.clientWidth;				//初始化canvas宽高
+		var clientH=500;					//document.body.clientWidth
+		var r=Math.round(clientW*4/5)/108;		//设定圆的半径,屏幕宽度5分之1,除以108
+		var marginLeft=Math.round(clientW/15);			//设定数字距离上边和左边的边距
+		var marginTop=Math.round(clientH/20);
+		var targetTime=new Date()			//设定目标时间
+		targetTime.setTime(targetTime.getTime()+3600*1000)	//时间是接下来的1个小时
+		var needSecond=0;						//初始化，倒计时的总秒数
+		var colorBalls=[];						//设置数组，将来彩球的信息都存这里
+		var colors=["#33B5E5","#0099CC","#AA66CC","#9933CC","#99CC00","#669900","#FFBB33","#FF8800","#FF4444","#CC0000"];		//定义彩球的各种颜色
+
+		window.onload=function(){
+			var canvas= document.getElementById("canvas");
+			var context=canvas.getContext("2d");
+
+			canvas.width=clientW;
+			canvas.height=clientH;
+			
+			needSecond=getSecond();			//获取总毫秒数
+			
+			setInterval(function(){
+
+				render(context);		//执行渲染函数，一定要传入context
+				update();			//更新时间
+			},50)
+		}
+
+		function getSecond(){					//获取倒计时总秒数
+			var nowTime=new Date();	//把目标秒数减去现在秒数，得到剩余秒数，然后返回
+			/*var chazhi=targetTime.getTime()-nowTime.getTime();		//原来是倒计时，返回的是一个时间差值
+			chazhi=Math.round(chazhi/1000)
+			return chazhi>0?chazhi:0;*/
+			var curTime=nowTime.getHours()*3600+nowTime.getMinutes()*60+nowTime.getSeconds();
+			// 获取当前时分秒上的秒数，然后返回
+			return curTime;
+		}
+
+		function update(){				//更新时间
+			var nextSecond=getSecond();		//获取最近的时间，如果最近的时间不等于上个时间，那么上个时间变成最新时间
+			var nexthour=parseInt(nextSecond/3600);						
+			var nextminute=parseInt((nextSecond-nexthour*3600)/60);
+			var nextsecond2=nextSecond%60;
+
+			var hour=parseInt(needSecond/3600);						
+			var minute=parseInt((needSecond-hour*3600)/60);
+			var second=needSecond%60;
+
+			if(nextsecond2!=second){	//对比两个时间段的秒数值是否相等，不等于就执行下面方法
+
+				//如果每个倒计时上的过去数字和现在数字不同，就定义彩球的各个位置
+				if(parseInt(nexthour/10)!=parseInt(hour/10)){
+					getColorBall(marginLeft,marginTop,parseInt(hour/10));
+				}
+				if(parseInt(nexthour%10)!=parseInt(hour%10)){
+					getColorBall(marginLeft+15*(r+1),marginTop,parseInt(hour%10));
+				}
+
+				if(parseInt(nextminute/10)!=parseInt(minute/10)){
+					getColorBall(marginLeft+39*(r+1),marginTop,parseInt(minute/10));
+				}
+				if(parseInt(nextminute%10)!=parseInt(minute%10)){
+					getColorBall(marginLeft+54*(r+1),marginTop,parseInt(minute%10));
+				}
+
+				if(parseInt(nextsecond2/10)!=parseInt(second/10)){
+					getColorBall(marginLeft+78*(r+1),marginTop,parseInt(second/10));
+				}
+				if(parseInt(nextsecond2%10)!=parseInt(second%10)){
+					getColorBall(marginLeft+93*(r+1),marginTop,parseInt(nextsecond2%10));
+				}
+
+
+				needSecond=nextSecond;	//更新最新的时间
+			}
+
+			updateColorBall();			//执行彩球的运动
+		}
+
+		function updateColorBall(){			
+			for(var i=0;i<colorBalls.length;i++){
+				colorBalls[i].x+=colorBalls[i].vx;	//彩球的x、y坐标持续加速
+				colorBalls[i].y+=colorBalls[i].vy;	
+				colorBalls[i].vy+=colorBalls[i].g;	//x速度再持续加上重力加速度
+				if(colorBalls[i].y>clientH-r){		//如果小球y坐标超过半径加上canvas高
+					colorBalls[i].y=clientH-r;	//y坐标等于该数值
+					colorBalls[i].vy=-colorBalls[i].vy*0.7;	 //y轴速度方向调转
+				}
+			}
+
+			var cnt=0;					//定义一个变量，保存在屏幕中的小球
+			for(var i=0;i<colorBalls.length;i++){
+				if(colorBalls[i].x+r>0&&colorBalls[i].x-r<clientW){		//判断在屏幕中间的小球
+					colorBalls[cnt++]=colorBalls[i];	//colorBalls[cnt++]存放屏幕中间的小球
+
+				}
+
+			}
+			while(colorBalls.length>Math.min(500,cnt)){		//持续增加的小球大于保存在中央的小球数量
+				colorBalls.pop();		//减去小球数组最后一个值
+			}
+			
+		}
+
+		
+
+		function getColorBall(xpos,ypos,num){		//获得彩色小球的信息
+			for(var i=0;i<digit[num].length;i++){
+				for(var j=0;j<digit[num][i].length;j++){
+					if(digit[num][i][j]==1){
+						var aBall={
+							x:xpos+j*(r+1)*2+(r+1),
+							y:ypos+i*(r+1)*2+(r+1),
+							color:colors[ Math.floor( Math.random()*colors.length ) ],
+							vx:Math.pow( -1 , Math.ceil( Math.random()*1000 ) ) * 4,
+							vy:-5,
+							g:1.5+Math.random()
+						}
+						colorBalls.push(aBall);
+					}
+				}
+			}
+		}
+
+		
+
+		function render(ctx){				//渲染数字，绘制小球
+			ctx.clearRect(0,0,canvas.width,canvas.height)
+			var hour=parseInt(needSecond/3600);						
+			var minute=parseInt((needSecond-hour*3600)/60);
+			var second=parseInt(needSecond%60);
+
+			draw(marginLeft,marginTop,parseInt(hour/10),ctx);		//执行绘制函数
+			draw(marginLeft+15*(r+1),marginTop,parseInt(hour%10),ctx);
+			draw(marginLeft+30*(r+1),marginTop,10,ctx);
+
+			draw(marginLeft+39*(r+1),marginTop,parseInt(minute/10),ctx);
+			draw(marginLeft+54*(r+1),marginTop,parseInt(minute%10),ctx);
+			draw(marginLeft+69*(r+1),marginTop,10,ctx);
+
+			draw(marginLeft+78*(r+1),marginTop,parseInt(second/10),ctx);
+			draw(marginLeft+93*(r+1),marginTop,parseInt(second%10),ctx);
+
+			 for( var i = 0 ; i < colorBalls.length ; i ++ ){		//绘制彩球
+			        ctx.fillStyle=colorBalls[i].color;
+
+			        ctx.beginPath();
+			        ctx.arc( colorBalls[i].x , colorBalls[i].y , r , 0 , 2*Math.PI , true );
+			        ctx.closePath();
+
+			        ctx.fill();
+			    }
+			
+
+		}
+
+		function draw(x,y,num,ctx){		//循环digit.js中的三维数组，每行的1，变成一个圆球
+			for(var i=0;i<digit[num].length;i++){
+				for(var j=0;j<digit[num][i].length;j++){
+					if(digit[num][i][j]==1){
+
+						ctx.fillStyle="#FF1493";
+						ctx.beginPath();
+						ctx.arc(x+j*(r+1)*2+(r+1),y+i*(r+1)*2+(r+1),r,0,Math.PI*2)  //(r+1)*2是圆所在方格的长度
+						ctx.closePath();
+						ctx.fill();
+					}
+				}
+			}
+
+			
+		}
+	</script>
+</body>
+</html>
